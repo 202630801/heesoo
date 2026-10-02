@@ -1,0 +1,629 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>수행평가 플래너 & 알림 센터</title>
+  <style>
+    :root {
+      --bg-color: #fefce8; /* 은은한 크림 베이지 */
+      --card-bg: #ffffff;
+      --border-color: #fef08a; /* 부드러운 연노랑 테두리 */
+      --text-main: #292524;
+      --text-sub: #78716c;
+      
+      /* 소프트 파스텔 컬러 */
+      --primary: #fb923c; /* 소프트 코랄 피치 */
+      --primary-hover: #f97316;
+      --primary-light: #fff7ed;
+      --secondary: #a3e635; /* 연한 파스텔 올리브/연두 */
+      --accent-yellow: #fde047; /* 부드러운 파스텔 노랑 */
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    }
+
+    body {
+      background-color: var(--bg-color);
+      color: var(--text-main);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      padding: 30px 20px;
+    }
+
+    /* 화면 크기 760px 유지 */
+    .app-container {
+      width: 100%;
+      max-width: 760px;
+      background: var(--card-bg);
+      border-radius: 32px;
+      box-shadow: 0 20px 40px rgba(251, 146, 60, 0.08), 0 10px 20px rgba(163, 230, 53, 0.08);
+      border: 3px solid var(--border-color);
+      padding: 36px;
+    }
+
+    /* 상단 헤더 & 탭 */
+    .header-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 24px;
+    }
+
+    .app-title {
+      font-size: 1.4rem;
+      font-weight: 900;
+      color: var(--primary);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .nav-tabs {
+      display: flex;
+      background: #fef9c3;
+      border-radius: 16px;
+      padding: 5px;
+    }
+
+    .tab-btn {
+      padding: 10px 20px;
+      border: none;
+      background: none;
+      border-radius: 12px;
+      font-size: 0.9rem;
+      font-weight: 800;
+      color: var(--text-sub);
+      cursor: pointer;
+      transition: all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    .tab-btn.active {
+      background: var(--card-bg);
+      color: var(--primary);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+      transform: scale(1.05);
+    }
+
+    .badge-count {
+      background: var(--secondary);
+      color: #365314;
+      font-size: 0.75rem;
+      padding: 2px 8px;
+      border-radius: 10px;
+      margin-left: 4px;
+    }
+
+    /* 프로그레스 바 */
+    .progress-bar-container {
+      width: 100%;
+      height: 8px;
+      background-color: #fef08a;
+      border-radius: 4px;
+      margin-bottom: 28px;
+      overflow: hidden;
+    }
+
+    .progress-bar {
+      height: 100%;
+      width: 16.66%;
+      background: linear-gradient(90deg, var(--accent-yellow), var(--primary), var(--secondary));
+      border-radius: 4px;
+      transition: width 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    .step-indicator {
+      font-size: 0.85rem;
+      font-weight: 900;
+      color: var(--primary);
+      letter-spacing: 0.5px;
+      margin-bottom: 8px;
+    }
+
+    /* 위저드 슬라이더 영역 */
+    .step-wrapper {
+      position: relative;
+      overflow: hidden;
+      min-height: 220px;
+    }
+
+    .step-slider {
+      display: flex;
+      transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+      width: 100%;
+    }
+
+    .step-page {
+      min-width: 100%;
+      box-sizing: border-box;
+    }
+
+    .step-title {
+      font-size: 1.3rem;
+      font-weight: 900;
+      margin-bottom: 18px;
+      color: var(--text-main);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .form-group {
+      margin-bottom: 16px;
+    }
+
+    label {
+      display: block;
+      font-size: 0.85rem;
+      font-weight: 800;
+      color: var(--text-sub);
+      margin-bottom: 8px;
+    }
+
+    input, select, textarea {
+      width: 100%;
+      padding: 14px 16px;
+      background: #fefce8;
+      border: 2px solid #fef08a;
+      border-radius: 16px;
+      font-size: 1rem;
+      color: var(--text-main);
+      outline: none;
+      transition: all 0.2s ease;
+    }
+
+    textarea {
+      resize: vertical;
+      min-height: 90px;
+    }
+
+    input:focus, select:focus, textarea:focus {
+      border-color: var(--primary);
+      background: #ffffff;
+      box-shadow: 0 0 0 4px rgba(251, 146, 60, 0.15);
+    }
+
+    .range-wrap {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      padding-top: 8px;
+    }
+
+    input[type="range"] {
+      flex: 1;
+      accent-color: var(--primary);
+      height: 8px;
+    }
+
+    .range-val {
+      font-weight: 900;
+      font-size: 1.2rem;
+      color: var(--primary);
+      min-width: 42px;
+      background: var(--primary-light);
+      padding: 4px 10px;
+      border-radius: 12px;
+      text-align: center;
+    }
+
+    /* 통통 튀는 하단 버튼 그룹 */
+    .btn-group {
+      display: flex;
+      justify-content: space-between;
+      gap: 16px;
+      margin-top: 28px;
+    }
+
+    .btn {
+      flex: 1;
+      padding: 15px;
+      border: 2px solid #fef08a;
+      border-radius: 16px;
+      font-size: 1rem;
+      font-weight: 800;
+      cursor: pointer;
+      background: #ffffff;
+      color: var(--text-sub);
+      transition: all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    .btn:active:not(:disabled) {
+      transform: scale(0.92);
+    }
+
+    .btn-primary {
+      background: var(--primary);
+      border-color: var(--primary);
+      color: #ffffff;
+      box-shadow: 0 10px 20px rgba(251, 146, 60, 0.25);
+    }
+
+    .btn-primary:hover {
+      background: var(--primary-hover);
+      transform: translateY(-3px);
+    }
+
+    .btn-primary:active {
+      transform: scale(0.94) !important;
+    }
+
+    .btn:disabled {
+      opacity: 0.35;
+      cursor: not-allowed;
+    }
+
+    /* 알림 센터 그리드 카드 목록 */
+    .notify-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(310px, 1fr));
+      gap: 18px;
+      max-height: 480px;
+      overflow-y: auto;
+      padding-right: 4px;
+    }
+
+    .notify-card {
+      background: #ffffff;
+      border: 2px solid #fef08a;
+      border-radius: 20px;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      gap: 12px;
+      box-shadow: 0 6px 16px rgba(251, 146, 60, 0.05);
+      animation: popIn 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .notify-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 10px 24px rgba(251, 146, 60, 0.1);
+    }
+
+    @keyframes popIn {
+      0% { opacity: 0; transform: scale(0.85) translateY(12px); }
+      100% { opacity: 1; transform: scale(1) translateY(0); }
+    }
+
+    .notify-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 8px;
+    }
+
+    .notify-title {
+      font-weight: 900;
+      font-size: 1.1rem;
+      color: var(--text-main);
+    }
+
+    .notify-details {
+      font-size: 0.88rem;
+      color: var(--text-sub);
+      line-height: 1.6;
+    }
+
+    .notify-footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-top: 12px;
+      border-top: 2px dashed #fef08a;
+    }
+
+    .toggle-btn {
+      padding: 6px 14px;
+      border-radius: 20px;
+      font-size: 0.8rem;
+      font-weight: 800;
+      cursor: pointer;
+      border: none;
+      background: #fef9c3;
+      color: var(--text-sub);
+      transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    .toggle-btn:active {
+      transform: scale(0.9);
+    }
+
+    .toggle-btn.on {
+      background: var(--primary-light);
+      color: var(--primary);
+    }
+
+    .btn-delete {
+      background: none;
+      border: none;
+      color: #ef4444;
+      font-size: 0.82rem;
+      font-weight: 800;
+      cursor: pointer;
+      transition: transform 0.2s ease;
+    }
+
+    .btn-delete:hover {
+      transform: scale(1.15);
+    }
+
+    .empty-state {
+      grid-column: span 2;
+      text-align: center;
+      padding: 60px 0;
+      color: var(--text-sub);
+      font-size: 1rem;
+      font-weight: 700;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="app-container">
+    
+    <!-- Header -->
+    <div class="header-bar">
+      <div class="app-title">📚 수행평가 플래너</div>
+      <div class="nav-tabs">
+        <button class="tab-btn active" id="tabAdd" onclick="switchView('add')">✏️ 등록하기</button>
+        <button class="tab-btn" id="tabNotify" onclick="switchView('notify')">
+          🔔 알림 센터 <span class="badge-count" id="notifyCount">0</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- VIEW 1: 넓은 화면 단계별 Wizard -->
+    <div id="viewWizard">
+      <div class="step-indicator" id="stepIndicator">1단계 / 6단계</div>
+      <div class="progress-bar-container">
+        <div class="progress-bar" id="progressBar"></div>
+      </div>
+
+      <div class="step-wrapper">
+        <div class="step-slider" id="stepSlider">
+          
+          <!-- 1단계: 이름 -->
+          <div class="step-page">
+            <div class="step-title">📖 과목 및 수행평가명</div>
+            <div class="form-group">
+              <label>평가 이름을 입력하세요</label>
+              <input type="text" id="title" placeholder="예: [국어] 현대시 분석 보고서">
+            </div>
+          </div>
+
+          <!-- 2단계: 유형 -->
+          <div class="step-page">
+            <div class="step-title">📋 평가 형식</div>
+            <div class="form-group">
+              <label>유형 선택</label>
+              <select id="type">
+                <option value="✍️ 지필 / 서술형">✍️ 지필 / 서술형</option>
+                <option value="🎤 발표 / PPT">🎤 발표 / PPT 제작</option>
+                <option value="📑 보고서 / 탐구">📑 보고서 / 탐구 과제</option>
+                <option value="🎨 실기 / 기타">🎨 실기 / 기타</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- 3단계: 마감 날짜 -->
+          <div class="step-page">
+            <div class="step-title">📅 제출/진행 마감일</div>
+            <div class="form-group">
+              <label>마감 날짜 선택</label>
+              <input type="date" id="dueDate">
+            </div>
+          </div>
+
+          <!-- 4단계: 알림 날짜 및 시간 -->
+          <div class="step-page">
+            <div class="step-title">⏰ 미리 알림 받을 날짜와 시간</div>
+            <div class="form-group">
+              <label>알림 일시 설정</label>
+              <input type="datetime-local" id="notifyTime">
+            </div>
+          </div>
+
+          <!-- 5단계: 준비물 -->
+          <div class="step-page">
+            <div class="step-title">🎒 필요한 준비물</div>
+            <div class="form-group">
+              <label>준비물 메모 (선택)</label>
+              <textarea id="materials" placeholder="예: USB, 발표 대본, 색연필 등"></textarea>
+            </div>
+          </div>
+
+          <!-- 6단계: 난이도 -->
+          <div class="step-page">
+            <div class="step-title">🔥 체감 난이도</div>
+            <div class="form-group">
+              <label>난이도 설정 (1 ~ 10)</label>
+              <div class="range-wrap">
+                <input type="range" id="difficulty" min="1" max="10" value="5" oninput="document.getElementById('diffVal').innerText = this.value">
+                <span class="range-val" id="diffVal">5</span>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <div class="btn-group">
+        <button class="btn" id="prevBtn" onclick="moveStep(-1)" disabled>👈 이전</button>
+        <button class="btn btn-primary" id="nextBtn" onclick="moveStep(1)">다음 ✨</button>
+      </div>
+    </div>
+
+    <!-- VIEW 2: 알림 센터 (전체 목록 그리드) -->
+    <div id="viewNotify" style="display: none;">
+      <div id="notifyListContainer" class="notify-grid"></div>
+    </div>
+
+  </div>
+
+  <script>
+    let currentStep = 0;
+    const totalSteps = 6;
+    let taskList = [];
+
+    function updateStepUI() {
+      const slider = document.getElementById('stepSlider');
+      slider.style.transform = `translateX(-${currentStep * 100}%)`;
+
+      const progressPercent = ((currentStep + 1) / totalSteps) * 100;
+      document.getElementById('progressBar').style.width = `${progressPercent}%`;
+      document.getElementById('stepIndicator').innerText = `${currentStep + 1}단계 / ${totalSteps}단계`;
+
+      document.getElementById('prevBtn').disabled = (currentStep === 0);
+      
+      const nextBtn = document.getElementById('nextBtn');
+      nextBtn.innerText = (currentStep === totalSteps - 1) ? '등록 완료 🚀' : '다음 ✨';
+    }
+
+    function moveStep(direction) {
+      if (direction === 1) {
+        if (currentStep === 0 && !document.getElementById('title').value.trim()) {
+          alert('수행평가 이름을 입력해 주세요!');
+          return;
+        }
+        if (currentStep === 2 && !document.getElementById('dueDate').value) {
+          alert('마감 날짜를 선택해 주세요!');
+          return;
+        }
+        if (currentStep === 3 && !document.getElementById('notifyTime').value) {
+          alert('알림을 받을 날짜와 시간을 선택해 주세요!');
+          return;
+        }
+      }
+
+      currentStep += direction;
+
+      if (currentStep >= totalSteps) {
+        saveTask();
+        return;
+      }
+
+      updateStepUI();
+    }
+
+    function formatDateTime(dtStr) {
+      if (!dtStr) return '미설정';
+      const dt = new Date(dtStr);
+      const y = dt.getFullYear();
+      const m = String(dt.getMonth() + 1).padStart(2, '0');
+      const d = String(dt.getDate()).padStart(2, '0');
+      const hh = String(dt.getHours()).padStart(2, '0');
+      const mm = String(dt.getMinutes()).padStart(2, '0');
+      return `${y}-${m}-${d} ${hh}:${mm}`;
+    }
+
+    function saveTask() {
+      const newTask = {
+        id: Date.now(),
+        title: document.getElementById('title').value.trim(),
+        type: document.getElementById('type').value,
+        dueDate: document.getElementById('dueDate').value,
+        notifyTime: document.getElementById('notifyTime').value,
+        materials: document.getElementById('materials').value.trim() || '없음',
+        difficulty: document.getElementById('difficulty').value,
+        notify: true
+      };
+
+      taskList.push(newTask);
+      resetForm();
+      switchView('notify');
+    }
+
+    function resetForm() {
+      currentStep = 0;
+      document.getElementById('title').value = '';
+      document.getElementById('type').selectedIndex = 0;
+      document.getElementById('dueDate').value = '';
+      document.getElementById('notifyTime').value = '';
+      document.getElementById('materials').value = '';
+      document.getElementById('difficulty').value = 5;
+      document.getElementById('diffVal').innerText = '5';
+      updateStepUI();
+    }
+
+    function switchView(viewName) {
+      const wizard = document.getElementById('viewWizard');
+      const notify = document.getElementById('viewNotify');
+      const tabAdd = document.getElementById('tabAdd');
+      const tabNotify = document.getElementById('tabNotify');
+
+      if (viewName === 'add') {
+        wizard.style.display = 'block';
+        notify.style.display = 'none';
+        tabAdd.classList.add('active');
+        tabNotify.classList.remove('active');
+      } else {
+        wizard.style.display = 'none';
+        notify.style.display = 'block';
+        tabAdd.classList.remove('active');
+        tabNotify.classList.add('active');
+        renderNotifyCenter();
+      }
+    }
+
+    function toggleNotify(id) {
+      const task = taskList.find(t => t.id === id);
+      if (task) {
+        task.notify = !task.notify;
+        renderNotifyCenter();
+      }
+    }
+
+    function deleteTask(id) {
+      taskList = taskList.filter(t => t.id !== id);
+      renderNotifyCenter();
+    }
+
+    function renderNotifyCenter() {
+      document.getElementById('notifyCount').innerText = taskList.length;
+      const container = document.getElementById('notifyListContainer');
+
+      if (taskList.length === 0) {
+        container.innerHTML = `<div class="empty-state">등록된 수행평가 알림이 없습니다. 🎈</div>`;
+        return;
+      }
+
+      container.innerHTML = taskList.map(task => `
+        <div class="notify-card">
+          <div>
+            <div class="notify-header">
+              <span class="notify-title">📝 ${escapeHtml(task.title)}</span>
+              <span style="font-size:0.78rem; color: var(--primary); font-weight:900; background: var(--primary-light); padding:3px 10px; border-radius:12px; white-space:nowrap;">🔥 Lvl.${task.difficulty}</span>
+            </div>
+            <div class="notify-details" style="margin-top:10px;">
+              <div>• <b>형식:</b> ${task.type}</div>
+              <div>• <b>마감:</b> 🗓️ ${task.dueDate}</div>
+              <div>• <b>알림:</b> ⏰ ${formatDateTime(task.notifyTime)}</div>
+              <div>• <b>준비물:</b> 🎒 ${escapeHtml(task.materials)}</div>
+            </div>
+          </div>
+          <div class="notify-footer">
+            <button class="toggle-btn ${task.notify ? 'on' : ''}" onclick="toggleNotify(${task.id})">
+              ${task.notify ? '🔔 알림 켜짐' : '🔕 알림 꺼짐'}
+            </button>
+            <button class="btn-delete" onclick="deleteTask(${task.id})">🗑️ 삭제</button>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function escapeHtml(str) {
+      return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+    }
+
+    updateStepUI();
+  </script>
+</body>
+</html>
